@@ -57,7 +57,7 @@
   }
   .login-sub {
     font-size: 12px;
-    color: var(--gray2);
+    color: #1a1f3a;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 36px;
@@ -1115,7 +1115,7 @@ function renderPlayerRow(container, name, idx, team) {
     `;
   } else {
     row.innerHTML = `
-      <div class="player-name" onclick="showNameTooltip(this,this.dataset.full)" data-full="${name}"><span class="player-num">${idx + 1}</span>${name}</div>
+      <div class="player-name" data-full="${name}"><span class="player-num">${idx + 1}</span>${name}</div>
       <div class="counter">
         <button class="counter-btn goal goal-btn" title="Goles"
           data-team="${team}" data-id="${id}" data-val="0"
@@ -1372,7 +1372,9 @@ function showToast(msg, type = "") {
   setTimeout(() => t.classList.remove("show"), 3000);
 }
 
-function showNameTooltip(el, name) {
+function showNameTooltip(el) {
+  const name = el.dataset.full;
+  if (!name) return;
   const tip = document.getElementById("name-tooltip");
   tip.textContent = name;
   const rect = el.getBoundingClientRect();
@@ -1382,6 +1384,12 @@ function showNameTooltip(el, name) {
   clearTimeout(tip._timer);
   tip._timer = setTimeout(() => tip.classList.remove("show"), 2500);
 }
+
+// Delegación global: captura clicks en cualquier .player-name con data-full
+document.addEventListener("click", function(e) {
+  const el = e.target.closest(".player-name[data-full]");
+  if (el) showNameTooltip(el);
+});
 </script>
 <div id="name-tooltip"></div>
 </body>
