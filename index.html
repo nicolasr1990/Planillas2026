@@ -652,6 +652,26 @@
     margin-bottom: 10px;
     font-weight: 500;
   }
+
+  /* ── Tooltip nombre completo ── */
+  #name-tooltip {
+    display: none;
+    position: fixed;
+    background: #1a1f3a;
+    color: #fff;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 9999;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    pointer-events: none;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  #name-tooltip.show { display: block; opacity: 1; }
 </style>
 </head>
 <body>
@@ -659,7 +679,7 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo">ACPF</div>
+    <div class="login-logo"><img src="https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/logo.png" alt="ACPF" style="width:200px;height:auto;object-fit:contain;"></div>
     <div class="login-sub">Asociación Civil Paceña de Fútbol</div>
     <h2>Acceso Mesa de Partido</h2>
     <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
@@ -671,7 +691,7 @@
 <!-- APP -->
 <div id="app">
   <header>
-    <div class="header-logo">AC<span>P</span>F</div>
+    <div class="header-logo"><img src="https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/logo2.png" alt="ACPF" style="height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);"></div>
     <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
   </header>
 
@@ -748,9 +768,10 @@
       <div class="match-header" id="match-header">
         <div class="match-club">
           <div class="match-club-name" id="mh-local">–</div>
-          <div class="match-club-cat" id="mh-cat">–</div>
+          <div class="match-club-cat">Local</div>
         </div>
-        <div>
+        <div style="text-align:center;">
+          <div id="mh-info" style="font-size:11px;opacity:0.7;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">–</div>
           <div class="match-score" id="mh-score">0 – 0</div>
           <div class="match-score-label">Goles</div>
         </div>
@@ -1005,9 +1026,10 @@ function setDot(active) {
 // MATCH HEADER
 // ══════════════════════════════════
 function buildMatchHeader(local, visitante, cat) {
+  const fechaNum = document.getElementById("fecha-num").value;
   document.getElementById("mh-local").textContent = local;
   document.getElementById("mh-visitante").textContent = visitante;
-  document.getElementById("mh-cat").textContent = cat;
+  document.getElementById("mh-info").textContent = `Fecha ${fechaNum}  ·  ${cat}`;
   document.getElementById("mh-score").textContent = "0 – 0";
 }
 
@@ -1093,7 +1115,7 @@ function renderPlayerRow(container, name, idx, team) {
     `;
   } else {
     row.innerHTML = `
-      <div class="player-name"><span class="player-num">${idx + 1}</span>${name}</div>
+      <div class="player-name" onclick="showNameTooltip(this,this.dataset.full)" data-full="${name}"><span class="player-num">${idx + 1}</span>${name}</div>
       <div class="counter">
         <button class="counter-btn goal goal-btn" title="Goles"
           data-team="${team}" data-id="${id}" data-val="0"
@@ -1349,6 +1371,18 @@ function showToast(msg, type = "") {
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
 }
+
+function showNameTooltip(el, name) {
+  const tip = document.getElementById("name-tooltip");
+  tip.textContent = name;
+  const rect = el.getBoundingClientRect();
+  tip.style.left = (rect.left + rect.width / 2) + "px";
+  tip.style.top  = (rect.top - 44 + window.scrollY) + "px";
+  tip.classList.add("show");
+  clearTimeout(tip._timer);
+  tip._timer = setTimeout(() => tip.classList.remove("show"), 2500);
+}
 </script>
+<div id="name-tooltip"></div>
 </body>
 </html>
