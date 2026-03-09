@@ -1378,8 +1378,13 @@ function showNameTooltip(el) {
   const tip = document.getElementById("name-tooltip");
   tip.textContent = name;
   const rect = el.getBoundingClientRect();
-  tip.style.left = (rect.left + rect.width / 2) + "px";
-  tip.style.top  = (rect.top - 44 + window.scrollY) + "px";
+  // position:fixed → coordenadas relativas al viewport
+  const tipLeft = rect.left + rect.width / 2;
+  let tipTop = rect.top - 44;
+  // Si queda fuera de la pantalla por arriba, mostrarlo abajo del elemento
+  if (tipTop < 8) tipTop = rect.bottom + 8;
+  tip.style.left = tipLeft + "px";
+  tip.style.top  = tipTop + "px";
   tip.classList.add("show");
   clearTimeout(tip._timer);
   tip._timer = setTimeout(() => tip.classList.remove("show"), 2500);
