@@ -320,13 +320,32 @@
   /* ── PLAYER ROWS ── */
   .player-row {
     display: grid;
-    grid-template-columns: 1fr 36px 36px 36px;
+    grid-template-columns: 1fr 36px 36px 36px 36px;
     gap: 6px;
     align-items: center;
     padding: 7px 6px;
     border-radius: 8px;
     transition: background 0.15s;
     margin-bottom: 3px;
+  }
+  .jugo-btn {
+    width: 30px; height: 30px;
+    border: 2px solid var(--gray2);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    color: #9ca3af;
+  }
+  .jugo-btn.active {
+    background: #e8f5ef;
+    border-color: var(--green);
+    color: var(--green);
   }
   .player-row:hover { background: rgba(26,63,204,0.05); }
   .player-row.has-card { background: rgba(240,100,100,0.05); }
@@ -641,7 +660,7 @@
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">ACPF</div>
-    <div class="login-sub">Asociación Civil Paseña de Fútbol</div>
+    <div class="login-sub">Asociación Civil Paceña de Fútbol</div>
     <h2>Acceso Mesa de Partido</h2>
     <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">INGRESAR</button>
@@ -866,8 +885,8 @@ async function initApp() {
   // Cargar jugadores desde Sheets
   await cargarJugadores();
 
-  // Poblar selects de clubes
-  const clubs = Object.keys(jugadoresCache);
+  // Poblar selects de clubes (orden alfabético)
+  const clubs = Object.keys(jugadoresCache).sort((a, b) => a.localeCompare(b, "es"));
   ["club-local", "club-visitante"].forEach(id => {
     const sel = document.getElementById(id);
     clubs.forEach(c => {
@@ -896,7 +915,7 @@ async function cargarJugadores() {
     showToast("⚠️ No se pudieron cargar los jugadores desde Sheets", "error");
     // Fallback: clubes vacíos para no bloquear la app
     ["Anahí","Sol Naciente","Camba Porá","San Antonio",
-     "San Isidro","Cruz Quiroz","11 Corazones","Coembota"].forEach(c => {
+     "San Isidro","Cruz Quiroz","Once Corazones","Coe mbota"].forEach(c => {
       jugadoresCache[c] = { Cadetes:[], "Sub-20":[], Reserva:[], Primera:[] };
     });
   }
@@ -1025,6 +1044,13 @@ function buildTeamSection(club, team, cat) {
       <span class="team-total-badge" id="total-${team}">⚽ 0</span>
     </div>
     ${cat === "Cadetes" ? `<div class="cadetes-badge">📋 Categoría Cadetes – podés agregar jugadores</div>` : ""}
+    <div style="display:grid;grid-template-columns:1fr 36px 36px 36px 36px;gap:6px;padding:2px 6px 4px;margin-bottom:2px;">
+      <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Jugador</div>
+      <div style="font-size:9px;color:#9ca3af;text-align:center;">⚽</div>
+      <div style="font-size:9px;color:#9ca3af;text-align:center;">🟨</div>
+      <div style="font-size:9px;color:#9ca3af;text-align:center;">🟥</div>
+      <div style="font-size:9px;color:#18b85a;text-align:center;font-weight:700;">✓JUG</div>
+    </div>
     <div id="players-${team}"></div>
     ${cat === "Cadetes" ? `
     <div class="add-player-row">
@@ -1084,6 +1110,11 @@ function renderPlayerRow(container, name, idx, team) {
         <button class="counter-btn red" title="Roja"
           data-id="${id}" data-val="0"
           onclick="cycleCard(this, 'red', '${id}')">🟥</button>
+      </div>
+      <div class="counter">
+        <button class="jugo-btn" title="¿Jugó?"
+          data-id="${id}" data-jugo="0"
+          onclick="toggleJugo(this)">✓</button>
       </div>
     `;
   }
@@ -1155,6 +1186,12 @@ function cycleCard(btn, type, id) {
   row.classList.toggle("has-card", !!hasCard);
 }
 
+function toggleJugo(btn) {
+  const val = btn.dataset.jugo === "1" ? "0" : "1";
+  btn.dataset.jugo = val;
+  btn.classList.toggle("active", val === "1");
+}
+
 // ══════════════════════════════════
 // COLLECT DATA
 // ══════════════════════════════════
@@ -1176,14 +1213,18 @@ function collectData() {
 
   ["local", "visitante"].forEach(team => {
     const container = document.getElementById(`players-${team}`);
-    container.querySelectorAll(".player-row").forEach(row => {
+    container.querySelectorAll(".player-row:not(.suspendido)").forEach(row => {
       const id = row.id.replace("row-", "");
-      const nombre = row.querySelector(".player-name").textContent.replace(/^\d+/, "").trim();
-      const goles = parseInt(document.querySelector(`.goal-btn[data-id='${id}']`)?.dataset.val || 0);
+      const nombreEl = row.querySelector(".player-name");
+      if (!nombreEl) return;
+      const nombre = nombreEl.textContent.replace(/^\d+/, "").trim();
+      const goles     = parseInt(document.querySelector(`.goal-btn[data-id='${id}']`)?.dataset.val || 0);
       const amarillas = parseInt(document.querySelector(`.counter-btn.yellow[data-id='${id}']`)?.dataset.val || 0);
-      const roja = parseInt(document.querySelector(`.counter-btn.red[data-id='${id}']`)?.dataset.val || 0);
-      if (goles > 0 || amarillas > 0 || roja > 0) {
-        const entry = { nombre, goles, amarillas, roja };
+      const roja      = parseInt(document.querySelector(`.counter-btn.red[data-id='${id}']`)?.dataset.val || 0);
+      const jugo      = document.querySelector(`.jugo-btn[data-id='${id}']`)?.dataset.jugo === "1" ? 1 : 0;
+      // Incluir jugador si jugó O si tiene incidencias (por si se olvidaron de marcar jugó)
+      if (jugo || goles > 0 || amarillas > 0 || roja > 0) {
+        const entry = { nombre, goles, amarillas, roja, jugo };
         if (team === "local") {
           data.jugadoresLocal.push(entry);
           data.golesLocal += goles;
@@ -1256,24 +1297,23 @@ async function submitPlanilla() {
 
   if (!d.fecha) { showToast("Falta la fecha del campeonato", "error"); return; }
 
-  const btn = document.querySelector(".btn-submit");
-  btn.disabled = true;
-  btn.textContent = "Enviando...";
+  // Buscar todos los botones de envío para resetearlos después
+  const btns = document.querySelectorAll(".btn-submit");
+  btns.forEach(b => { b.disabled = true; b.textContent = "Enviando..."; });
 
   try {
-    const resp = await fetch(SHEETS_URL, {
+    await fetch(SHEETS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(d),
       mode: "no-cors"
     });
-
+    // Resetear botones ANTES de mostrar éxito
+    btns.forEach(b => { b.disabled = false; b.textContent = "✓ Enviar Planilla"; });
     showSuccess(d);
   } catch (err) {
-    // Con no-cors no podemos leer la respuesta, pero si llega acá es un error de red
     showToast("Error al enviar. Verificá la conexión.", "error");
-    btn.disabled = false;
-    btn.textContent = "✓ Enviar Planilla";
+    btns.forEach(b => { b.disabled = false; b.textContent = "✓ Enviar Planilla"; });
   }
 }
 
