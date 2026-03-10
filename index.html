@@ -672,6 +672,50 @@
     transition: opacity 0.15s;
   }
   #name-tooltip.show { display: block; opacity: 1; }
+
+  /* ── Score ajustable ── */
+  #mh-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .score-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .score-sep {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .score-adj-btn {
+    background: rgba(255,255,255,0.18);
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    width: 28px;
+    height: 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.15s;
+  }
+  .score-adj-btn:hover, .score-adj-btn:active {
+    background: rgba(255,255,255,0.35);
+  }
+  #score-local, #score-visitante {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    min-width: 28px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -772,8 +816,20 @@
         </div>
         <div style="text-align:center;">
           <div id="mh-info" style="font-size:11px;opacity:0.7;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">–</div>
-          <div class="match-score" id="mh-score">0 – 0</div>
-          <div class="match-score-label">Goles</div>
+          <div class="match-score" id="mh-score">
+            <div class="score-col">
+              <button class="score-adj-btn" onclick="adjustScore('local',1)">＋</button>
+              <span id="score-local">0</span>
+              <button class="score-adj-btn" onclick="adjustScore('local',-1)">－</button>
+            </div>
+            <span class="score-sep">–</span>
+            <div class="score-col">
+              <button class="score-adj-btn" onclick="adjustScore('visitante',1)">＋</button>
+              <span id="score-visitante">0</span>
+              <button class="score-adj-btn" onclick="adjustScore('visitante',-1)">－</button>
+            </div>
+          </div>
+          <div class="match-score-label">Goles — tocá +/- para corregir goles en contra</div>
         </div>
         <div class="match-club">
           <div class="match-club-name" id="mh-visitante">–</div>
@@ -1030,7 +1086,10 @@ function buildMatchHeader(local, visitante, cat) {
   document.getElementById("mh-local").textContent = local;
   document.getElementById("mh-visitante").textContent = visitante;
   document.getElementById("mh-info").textContent = `Fecha ${fechaNum}  ·  ${cat}`;
-  document.getElementById("mh-score").textContent = "0 – 0";
+  document.getElementById("score-local").textContent = "0";
+  document.getElementById("score-local").dataset.extra = "0";
+  document.getElementById("score-visitante").textContent = "0";
+  document.getElementById("score-visitante").dataset.extra = "0";
 }
 
 function updateScore() {
@@ -1041,7 +1100,24 @@ function updateScore() {
   document.querySelectorAll(".goal-btn[data-team='visitante']").forEach(btn => {
     golesVisitante += parseInt(btn.dataset.val || 0);
   });
-  document.getElementById("mh-score").textContent = `${golesLocal} – ${golesVisitante}`;
+  // Sumar goles en contra manuales
+  const extraLocal     = parseInt(document.getElementById("score-local")?.dataset.extra || 0);
+  const extraVisitante = parseInt(document.getElementById("score-visitante")?.dataset.extra || 0);
+  document.getElementById("score-local").textContent     = golesLocal + extraLocal;
+  document.getElementById("score-visitante").textContent = golesVisitante + extraVisitante;
+}
+
+function adjustScore(equipo, delta) {
+  const el = document.getElementById(`score-${equipo}`);
+  const extra = parseInt(el.dataset.extra || 0) + delta;
+  // No permitir que el marcador quede negativo
+  const golesJugadores = equipo === "local"
+    ? [...document.querySelectorAll(".goal-btn[data-team='local']")].reduce((s,b) => s + parseInt(b.dataset.val||0), 0)
+    : [...document.querySelectorAll(".goal-btn[data-team='visitante']")].reduce((s,b) => s + parseInt(b.dataset.val||0), 0);
+  if (golesJugadores + extra < 0) return;
+  el.dataset.extra = extra;
+  updateScore();
+  if (delta > 0) showToast(`+1 gol en contra sumado a ${equipo === "local" ? document.getElementById("club-local").value : document.getElementById("club-visitante").value}`, "success");
 }
 
 // ══════════════════════════════════
@@ -1249,15 +1325,16 @@ function collectData() {
         const entry = { nombre, goles, amarillas, roja, jugo };
         if (team === "local") {
           data.jugadoresLocal.push(entry);
-          data.golesLocal += goles;
         } else {
           data.jugadoresVisitante.push(entry);
-          data.golesVisitante += goles;
         }
       }
     });
   });
 
+  // Goles tomados del marcador visual (incluye goles en contra ajustados manualmente)
+  data.golesLocal     = parseInt(document.getElementById("score-local").textContent || 0);
+  data.golesVisitante = parseInt(document.getElementById("score-visitante").textContent || 0);
   return data;
 }
 
