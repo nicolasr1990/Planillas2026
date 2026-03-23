@@ -1581,6 +1581,9 @@ window.addEventListener("load", () => {
   setTimeout(() => {
     introLogo.style.opacity = "1";
     introLogo.style.transform = "scale(1) translateY(0)";
+    const snd = new Audio("https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/intro.mp3");
+    snd.volume = 0.6;
+    snd.play().catch(() => {});
   }, 300);
 
   // Fase 2: subtítulo aparece
@@ -1608,7 +1611,7 @@ window.addEventListener("load", () => {
         menu.style.opacity = "1";
       }));
     }, 750);
-  }, 3500);
+  }, 4000);
 });
 
 // ══════════════════════════════════
