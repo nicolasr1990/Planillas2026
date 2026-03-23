@@ -1584,11 +1584,9 @@ window.addEventListener("load", () => {
     const snd = new Audio("https://nicolasr1990.github.io/Planillas2026/intro.mp3");
     snd.volume = 0.6;
     snd.load();
-    snd.addEventListener("canplaythrough", () => {
-      snd.play().catch(() => {});
-    }, { once: true });
-    // Fallback por si canplaythrough no se dispara
-    setTimeout(() => snd.play().catch(() => {}), 300);
+    snd.play()
+      .then(() => console.log("✅ Audio reproduciéndose"))
+      .catch(err => console.warn("❌ Audio bloqueado:", err.message));
   }, 300);
 
   // Fase 2: subtítulo aparece
