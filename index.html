@@ -1659,12 +1659,25 @@ function selectSec(btn, sec) {
   renderConsultas();
 }
 
+const _cache = {};
+const _cacheTTL = 30000; // 30 segundos
+
 async function renderConsultas() {
   const cont = document.getElementById("consultas-content");
+  const key  = `${secActual}-${catActual}`;
+  const now  = Date.now();
+
+  // Usar caché si existe y no expiró
+  if (_cache[key] && (now - _cache[key].ts) < _cacheTTL) {
+    cont.innerHTML = _cache[key].html;
+    return;
+  }
+
   cont.innerHTML = '<div class="no-data">Cargando...</div>';
 
   try {
     const resp = await fetch(`${SHEETS_URL}?action=${secActual}&categoria=${encodeURIComponent(catActual)}`);
+    if (!resp.ok) throw new Error("Error HTTP " + resp.status);
     const data = await resp.json();
     let html = "";
 
@@ -1676,9 +1689,13 @@ async function renderConsultas() {
       html = renderSuspendidos(data.suspendidos || [], catActual);
     }
 
+    _cache[key] = { html, ts: now };
     cont.innerHTML = html;
   } catch(e) {
-    cont.innerHTML = '<div class="no-data">Error al cargar datos.<br>Verificá tu conexión.</div>';
+    cont.innerHTML = `<div class="no-data">Error al cargar datos.<br>
+      <button onclick="renderConsultas()" style="margin-top:12px;background:#1a3fcc;color:white;
+      border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;">
+      🔄 Reintentar</button></div>`;
   }
 }
 
