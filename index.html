@@ -1643,12 +1643,11 @@ function showConsultas() {
 // ══════════════════════════════════
 let catActual  = "Primera";
 let secActual  = "posiciones";
-let cacheConsultas = {};
-
 function selectCat(btn, cat) {
   document.querySelectorAll(".ctab").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   catActual = cat;
+  document.getElementById("consultas-content").innerHTML = '<div class="no-data">Cargando...</div>';
   renderConsultas();
 }
 
@@ -1656,18 +1655,13 @@ function selectSec(btn, sec) {
   document.querySelectorAll(".stab").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   secActual = sec;
+  document.getElementById("consultas-content").innerHTML = '<div class="no-data">Cargando...</div>';
   renderConsultas();
 }
 
 async function renderConsultas() {
   const cont = document.getElementById("consultas-content");
   cont.innerHTML = '<div class="no-data">Cargando...</div>';
-
-  const key = `${catActual}-${secActual}`;
-  if (cacheConsultas[key]) {
-    cont.innerHTML = cacheConsultas[key];
-    return;
-  }
 
   try {
     const resp = await fetch(`${SHEETS_URL}?action=${secActual}&categoria=${encodeURIComponent(catActual)}`);
@@ -1682,7 +1676,6 @@ async function renderConsultas() {
       html = renderSuspendidos(data.suspendidos || [], catActual);
     }
 
-    cacheConsultas[key] = html;
     cont.innerHTML = html;
   } catch(e) {
     cont.innerHTML = '<div class="no-data">Error al cargar datos.<br>Verificá tu conexión.</div>';
