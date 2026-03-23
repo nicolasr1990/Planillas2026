@@ -748,11 +748,12 @@
 <body>
 
 <!-- INTRO -->
-<div id="intro-screen" style="position:fixed;inset:0;background:#0d1730;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+<div id="intro-screen" style="position:fixed;inset:0;background:linear-gradient(160deg,#040d24 0%,#0d1730 45%,#162050 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(26,63,204,0.22) 0%,transparent 68%);pointer-events:none;"></div>
   <div id="intro-logo" style="opacity:0;transform:scale(0.85);transition:opacity 0.9s ease,transform 0.9s ease;">
-    <img src="https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/logo.png" alt="ACPF" style="width:220px;height:auto;">
+    <img src="https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/logo2.png" alt="ACPF" style="width:260px;height:auto;">
   </div>
-  <div id="intro-sub" style="opacity:0;transition:opacity 0.8s ease 0.5s;margin-top:16px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;">
+  <div id="intro-sub" style="opacity:0;transition:opacity 0.9s cubic-bezier(.4,0,.2,1);margin-top:22px;color:rgba(255,255,255,0.55);font-family:Arial,sans-serif;font-size:11px;letter-spacing:3.5px;text-transform:uppercase;text-align:center;">
     Asociación Civil Paceña de Fútbol
   </div>
 </div>
@@ -791,10 +792,10 @@
 
   <!-- Tabs categorías -->
   <div style="display:flex;overflow-x:auto;background:white;border-bottom:2px solid #e8ecff;padding:0 12px;">
-    <button class="ctab active" onclick="selectCat(this,'Cadetes')">Cadetes</button>
-    <button class="ctab" onclick="selectCat(this,'Sub-20')">Sub-20</button>
+    <button class="ctab active" onclick="selectCat(this,'Primera')">Primera</button>
     <button class="ctab" onclick="selectCat(this,'Reserva')">Reserva</button>
-    <button class="ctab" onclick="selectCat(this,'Primera')">Primera</button>
+    <button class="ctab" onclick="selectCat(this,'Sub-20')">Sub-20</button>
+    <button class="ctab" onclick="selectCat(this,'Cadetes')">Cadetes</button>
   </div>
 
   <!-- Tabs sección -->
@@ -810,7 +811,7 @@
 </div>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:none;">
   <div class="login-card">
     <button onclick="volverMenu()" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;margin-bottom:8px;align-self:flex-start;font-family:Arial,sans-serif;">← Volver</button>
     <div class="login-logo"><img src="https://raw.githubusercontent.com/nicolasr1990/Planillas2026/main/logo.png" alt="ACPF" style="width:200px;height:auto;object-fit:contain;"></div>
@@ -1567,21 +1568,43 @@ document.addEventListener("click", function(e) {
 // INTRO ANIMATION
 // ══════════════════════════════════
 window.addEventListener("load", () => {
+  const introLogo = document.getElementById("intro-logo");
+  const introSub  = document.getElementById("intro-sub");
+  const intro     = document.getElementById("intro-screen");
+  const menu      = document.getElementById("menu-screen");
+
+  // Fase 1: logo sube y aparece
   setTimeout(() => {
-    document.getElementById("intro-logo").style.opacity = "1";
-    document.getElementById("intro-logo").style.transform = "scale(1)";
-    document.getElementById("intro-sub").style.opacity = "1";
-  }, 200);
+    introLogo.style.opacity = "1";
+    introLogo.style.transform = "scale(1) translateY(0)";
+  }, 300);
+
+  // Fase 2: subtítulo aparece
   setTimeout(() => {
-    const intro = document.getElementById("intro-screen");
-    intro.style.transition = "opacity 0.6s ease";
+    introSub.style.opacity = "1";
+  }, 950);
+
+  // Fase 3: brillo sutil en el logo
+  setTimeout(() => {
+    introLogo.querySelector("img").style.filter =
+      "brightness(0) invert(1) drop-shadow(0 0 20px rgba(255,255,255,0.5))";
+    introLogo.querySelector("img").style.transition = "filter 0.6s ease";
+  }, 1500);
+
+  // Fase 4: fade out intro, fade in menú
+  setTimeout(() => {
+    intro.style.transition = "opacity 0.75s cubic-bezier(.4,0,.2,1)";
     intro.style.opacity = "0";
     setTimeout(() => {
       intro.style.display = "none";
-      const menu = document.getElementById("menu-screen");
       menu.style.display = "flex";
-    }, 600);
-  }, 2400);
+      menu.style.opacity = "0";
+      menu.style.transition = "opacity 0.6s ease";
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        menu.style.opacity = "1";
+      }));
+    }, 750);
+  }, 2700);
 });
 
 // ══════════════════════════════════
@@ -1608,7 +1631,7 @@ function showConsultas() {
 // ══════════════════════════════════
 // CONSULTAS
 // ══════════════════════════════════
-let catActual  = "Cadetes";
+let catActual  = "Primera";
 let secActual  = "posiciones";
 let cacheConsultas = {};
 
